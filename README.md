@@ -71,7 +71,7 @@ er-cost-analysis/
     └── figures/              # exported charts for the portfolio write-up
 ```
 
-## Method notes (the honest fine print)
+## Method notes
 
 - **Survey weights.** Every average uses `PERWT23F` so estimates represent
   the U.S. civilian population, not just the survey sample.
@@ -87,15 +87,6 @@ er-cost-analysis/
   design variables (`VARSTR`/`VARPSU`); this project reports weighted point
   estimates only and says so.
 
-## Roadmap
-
-- [x] Phase 0 — pick data source, scaffold project
-- [x] Phase 1 — download data, load & explore each file
-- [x] Phase 2 — merge into one visit-level analysis table
-- [x] Phase 3 — analysis: averages by condition, payer, age, region
-- [x] Phase 4 — polish charts, export figures
-- [ ] Phase 5 — showcase: push to GitHub, write Squarespace post with key
-      charts + link to the notebook
 
 ## Data citation
 
