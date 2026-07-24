@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Does an ER Visit Really Cost?</title>
+<style>
+  /* ---- design tokens: warm neutrals matched to the portfolio site ---- */
+  :root {
+    --page: #b6a593;              /* the site's taupe background */
+    --surface: #f4ede3;           /* cream cards, like paper on the taupe */
+    --ink: #342f2a; --ink-2: #5c5548; --muted: #857b6c;
+    --grid: #e3d9ca; --baseline: #c9bda9; --ring: rgba(52,47,42,.14);
+    --c1: #a8502f;                /* terracotta — primary data color */
+    --c2: #0d8065;                /* teal — secondary data color */
+    --gray-mark: #a49a89;         /* warm gray — comparison marks */
+    --accent-text: #7c3a20;       /* darker rust for links/kicker text */
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--page); color: var(--ink);
+    font-family: "Avenir Next", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+    line-height: 1.65; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; }
+  h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.12; letter-spacing: -.01em; }
+  .kicker { color: var(--accent-text); font-weight: 700; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+  .dek { color: var(--ink-2); font-size: 1.1rem; margin-top: 14px; }
+  .byline { color: var(--muted); font-size: .85rem; margin-top: 18px; padding-bottom: 26px; border-bottom: 1px solid var(--grid); }
+  h2 { font-family: var(--serif); font-weight: 600; font-size: 1.45rem; letter-spacing: -.01em; margin: 44px 0 10px; }
+  p { margin: 12px 0; color: var(--ink-2); }
+  p strong, li strong { color: var(--ink); }
+  .note { font-size: .82rem; color: var(--muted); margin-top: 8px; }
+
+  /* ---- stat tiles ---- */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 28px 0 8px; }
+  .tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 14px 16px; }
+  .tile .v { font-size: 1.55rem; font-weight: 700; color: var(--ink); line-height: 1.2; }
+  .tile .l { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+
+  /* ---- chart cards ---- */
+  .card { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 20px 20px 12px; margin: 20px 0; }
+  .card h3 { font-family: var(--serif); font-weight: 600; font-size: 1.12rem; color: var(--ink); }
+  .card .sub { font-size: .82rem; color: var(--muted); margin: 2px 0 6px; }
+  svg { display: block; width: 100%; height: auto; }
+  svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: .8rem; color: var(--ink-2); margin: 6px 0 2px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .key { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .key.line { height: 3px; border-radius: 2px; width: 16px; }
+
+  /* ---- drill-down picker (one row above the chart it scopes) ---- */
+  .picker { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 6px; }
+  .picker button {
+    font: inherit; font-size: .85rem; padding: 6px 14px; border-radius: 999px; cursor: pointer;
+    background: transparent; color: var(--ink-2); border: 1px solid var(--grid);
+  }
+  .picker button[aria-pressed="true"] { background: var(--c1); border-color: var(--c1); color: #fff; font-weight: 600; }
+  .picker button:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
+
+  /* ---- tooltip ---- */
+  #tip {
+    position: fixed; pointer-events: none; opacity: 0; transition: opacity .12s;
+    background: var(--surface); border: 1px solid var(--ring); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 8px 12px; font-size: .8rem;
+    color: var(--ink-2); z-index: 10; max-width: 260px;
+  }
+  #tip .big { font-size: 1rem; font-weight: 700; color: var(--ink); }
+
+  /* ---- table view (accessibility fallback for every chart) ---- */
+  details { margin: 6px 0 4px; }
+  summary { font-size: .8rem; color: var(--muted); cursor: pointer; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: .82rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--grid); color: var(--ink-2); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; }
+
+  .foot { border-top: 1px solid var(--grid); margin-top: 48px; padding-top: 18px; font-size: .82rem; color: var(--muted); }
+  a { color: var(--accent-text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="kicker">Healthcare data analysis</div>
+  <h1>What does an ER visit really cost?</h1>
+  <p class="dek">The average emergency room bill in 2023 said $5,675. What actually
+  changed hands was $1,435. I dug into federal survey data to find out what ER care
+  really costs — and how much the answer depends on why you're there and who's paying.</p>
+  <p class="byline">By Navraj Grewal · MEPS 2023 microdata (AHRQ) · Analysis in Python —
+  <a href="https://github.com/ngrewal01/er-cost-analysis">full notebook on GitHub</a></p>
+
+  <p>Every year, Americans make tens of millions of trips to the emergency room, and
+  almost nobody can say what one costs. Hospital "chargemaster" prices are fiction;
+  what insurers negotiate is opaque. So I went to the closest thing the U.S. has to
+  ground truth: the <strong>Medical Expenditure Panel Survey (MEPS)</strong>, a
+  federal survey that records what was <em>actually paid</em> for each medical
+  visit — by insurers and patients combined, not what was billed.</p>
+
+  <div class="tiles">
+    <div class="tile"><div class="v">68M</div><div class="l">estimated U.S. ER visits, 2023</div></div>
+    <div class="tile"><div class="v">$591</div><div class="l">median paid per visit</div></div>
+    <div class="tile"><div class="v">$1,315</div><div class="l">mean paid per visit</div></div>
+    <div class="tile"><div class="v">4.0&times;</div><div class="l">charged vs. actually paid</div></div>
+  </div>
+  <p class="note">All figures are survey-weighted national estimates computed from 4,241
+  sampled ER visits in MEPS 2023.</p>
+
+  <h2>Four ways to end up in the ER</h2>
+  <p>I compared four of the most common broad reasons for an ER visit: <strong>injuries
+  &amp; trauma</strong>, <strong>cardiac &amp; circulatory events</strong>,
+  <strong>neurological events</strong>, and <strong>digestive problems</strong>.
+  Together they account for roughly 28&nbsp;million visits a year.</p>
+  <p>The first surprise: the <em>average</em> and the <em>typical</em> visit are wildly
+  different numbers. The mean is dragged upward by a minority of catastrophic cases,
+  and how far it's dragged varies by category:</p>
+
+  <div class="card">
+    <h3>Typical vs. average cost per ER visit</h3>
+    <div class="sub">Amount actually paid, by reason for visit — MEPS 2023, survey-weighted</div>
+    <div class="legend">
+      <span><span class="key" style="background:var(--c1)"></span>mean (average)</span>
+      <span><span class="key" style="background:var(--gray-mark)"></span>median (typical visit)</span>
+    </div>
+    <div id="chart-skew"></div>
+    <details><summary>View data as table</summary><div id="table-skew"></div></details>
+  </div>
+
+  <p><strong>Cardiac visits have the most extreme skew:</strong> the typical circulatory
+  visit costs about $505 — many are chest-pain scares that end with tests and a
+  discharge — but the average is 3.4&times; higher, pulled up by the visits that turn
+  out to be the real thing. Digestive visits show the same pattern at higher cost:
+  a long tail of GI bleeds and obstructions makes them the most expensive of the four
+  on average ($2,398), despite a modest typical cost. Injuries are the most
+  <em>predictable</em>: high volume, and the smallest gap between typical and average.</p>
+
+  <h2>Zooming in: what's actually inside each category</h2>
+  <p>Broad categories hide the interesting variation, so here's the drill-down —
+  every specific condition inside each group with a large enough sample to report:</p>
+
+  <div class="card">
+    <h3>Average paid per visit, by specific condition</h3>
+    <div class="sub">Pick a category — conditions with at least 30 sampled visits</div>
+    <div class="picker" id="picker" role="group" aria-label="Choose a category"></div>
+    <div id="chart-drill"></div>
+    <details><summary>View data as table</summary><div id="table-drill"></div></details>
+  </div>
+
+  <p>One number here looks bizarre — and it's the most instructive in the whole
+  dataset. <strong>A heart attack averages just $696 in the ER, less than half of
+  a hypertension visit.</strong> That's not because heart attacks are cheap. It's
+  because heart attack patients get <em>admitted</em>: the meter stops on the ER
+  event and the real costs — cath lab, surgery, ICU — land on the inpatient bill,
+  which is a different file entirely. It's a perfect example of why knowing where
+  a dataset's boundaries are matters as much as analyzing it.</p>
+
+  <h2>The 4&times; gap between the bill and reality</h2>
+  <p>For every category, hospitals charged several times what was ultimately paid.
+  The markup isn't uniform, either — neurological visits were billed at
+  <strong>4.7&times;</strong> what payers settled for, the steepest of the four:</p>
+
+  <div class="card">
+    <h3>What hospitals charge vs. what actually gets paid</h3>
+    <div class="sub">Average per visit, among visits with both a charge and a payment recorded</div>
+    <div class="legend">
+      <span><span class="key" style="background:var(--gray-mark)"></span>billed charge</span>
+      <span><span class="key" style="background:var(--c1)"></span>actually paid</span>
+    </div>
+    <div id="chart-markup"></div>
+    <details><summary>View data as table</summary><div id="table-markup"></div></details>
+  </div>
+
+  <p>If you've ever received a terrifying ER bill, this is the mechanism: the sticker
+  price is an opening offer that virtually no payer accepts. The gap is also why
+  "average ER cost" figures in the media vary so wildly — it depends entirely on
+  whether the source counted charges or payments.</p>
+
+  <h2>Who's paying matters more than what's wrong with you</h2>
+  <p>The same category of visit costs dramatically different amounts depending on
+  coverage. Privately insured patients' visits consistently involve higher payments
+  than publicly insured ones (Medicare/Medicaid) — and for digestive visits the gap
+  is a startling <strong>5.1&times;</strong>:</p>
+
+  <div class="card">
+    <h3>Average paid per visit: private vs. public coverage</h3>
+    <div class="sub">By reason for visit — groups with at least 30 sampled visits</div>
+    <div class="legend">
+      <span><span class="key" style="background:var(--c1)"></span>any private insurance</span>
+      <span><span class="key" style="background:var(--c2)"></span>public only (Medicare/Medicaid)</span>
+    </div>
+    <div id="chart-payer"></div>
+    <details><summary>View data as table</summary><div id="table-payer"></div></details>
+  </div>
+
+  <p>Part of this is negotiating power — public programs set administered prices,
+  private insurers negotiate from the chargemaster. Part is patient mix. Either way,
+  the payment attached to an identical diagnosis varies more by <em>insurance card</em>
+  than by almost any clinical factor in this data.</p>
+
+  <h2>What I'd want you to take away</h2>
+  <p>Three things. First, <strong>"the cost of an ER visit" is not one number</strong> —
+  the typical visit ($591) and the average ($1,315) tell different stories, and both
+  are honest. Second, <strong>billed charges are a fiction</strong> — a 4&times;
+  markup on average — so any cost figure is meaningless until you know whether it's
+  charges or payments. Third, <strong>datasets have edges</strong>: the "cheap heart
+  attack" isn't a finding, it's a boundary — and finding those boundaries is most
+  of what real data analysis is.</p>
+
+  <div class="foot">
+    <p><strong>Methods.</strong> Data: MEPS 2023 public-use files (HC-248E ER visits,
+    HC-249 conditions, HC-248I condition–event link, HC-251 person file), Agency for
+    Healthcare Research and Quality. Conditions grouped by AHRQ CCSR categories;
+    "subsequent encounter" suffixes trimmed for display. All estimates weighted with
+    PERWT23F; point estimates only (complex-survey standard errors not computed).
+    Visits with missing payment excluded; per-condition figures require ≥30 sampled
+    visits; a visit with multiple linked conditions counts under each. ER-event
+    payments only — costs after inpatient admission are out of scope.
+    Analysis in Python/pandas: <a href="https://github.com/ngrewal01/er-cost-analysis">notebook &amp; code</a>.</p>
+  </div>
+</div>
+
+<div id="tip" role="status" aria-hidden="true"></div>
+
+<script>
+// ================= data (computed in the analysis notebook) =================
+const DATA = {
+  systems: [
+    { name: "Injury & trauma",  slug: "inj", n: 712, nat: 11.8, mean: 1248, median: 661,  charged: 5249, paidSub: 1312, markup: 4.0 },
+    { name: "Cardiac & circulatory", slug: "cir", n: 554, nat: 8.3, mean: 1693, median: 505, charged: 7107, paidSub: 1921, markup: 3.7 },
+    { name: "Neurological",     slug: "nvs", n: 184, nat: 2.9, mean: 874,  median: 409,  charged: 4770, paidSub: 1015, markup: 4.7 },
+    { name: "Digestive",        slug: "dig", n: 344, nat: 5.2, mean: 2398, median: 699,  charged: 8497, paidSub: 2741, markup: 3.1 },
+  ],
+  drill: {
+    inj: [
+      { c: "Traumatic brain injury; concussion", n: 31,  avg: 1323, med: 502, natK: 511 },
+      { c: "Other unspecified injuries",         n: 204, avg: 1315, med: 789, natK: 3237 },
+      { c: "Fracture of the upper limb",         n: 62,  avg: 1307, med: 745, natK: 999 },
+      { c: "Sprains and strains",                n: 82,  avg: 1153, med: 517, natK: 1510 },
+      { c: "Fracture of lower limb (except hip)",n: 44,  avg: 994,  med: 643, natK: 850 },
+      { c: "Allergic reactions",                 n: 34,  avg: 735,  med: 407, natK: 465 },
+    ],
+    cir: [
+      { c: "Essential hypertension",             n: 129, avg: 1635, med: 505, natK: 1758 },
+      { c: "Nonspecific chest pain",             n: 66,  avg: 1237, med: 853, natK: 1237 },
+      { c: "Arterial embolism or thrombosis",    n: 39,  avg: 878,  med: 614, natK: 613 },
+      { c: "Cardiac dysrhythmias",               n: 78,  avg: 709,  med: 458, natK: 1104 },
+      { c: "Acute myocardial infarction",        n: 44,  avg: 696,  med: 440, natK: 510 },
+    ],
+    nvs: [
+      { c: "Headache, including migraine",       n: 47,  avg: 1296, med: 707, natK: 709 },
+      { c: "Epilepsy; convulsions",              n: 34,  avg: 864,  med: 529, natK: 505 },
+      { c: "Transient cerebral ischemia",        n: 49,  avg: 822,  med: 410, natK: 710 },
+    ],
+    dig: [
+      { c: "Diverticulosis and diverticulitis",  n: 35,  avg: 1641, med: 1517, natK: 473 },
+      { c: "Other gastrointestinal disorders",   n: 43,  avg: 1317, med: 950,  natK: 686 },
+      { c: "Intestinal infection",               n: 33,  avg: 831,  med: 523,  natK: 527 },
+    ],
+  },
+  payer: [
+    { name: "Injury & trauma",       priv: 1550, pub: 881 },
+    { name: "Cardiac & circulatory", priv: 2545, pub: 865 },
+    { name: "Neurological",          priv: 1175, pub: 596 },
+    { name: "Digestive",             priv: 3524, pub: 690 },
+  ],
+};
+
+// ================= helpers =================
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const usd = x => "$" + Math.round(x).toLocaleString("en-US");
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs) => {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+};
+
+// one shared tooltip; content set with textContent only (labels are data)
+const tip = document.getElementById("tip");
+function showTip(evt, bigText, lines) {
+  tip.replaceChildren();
+  const b = document.createElement("div");
+  b.className = "big"; b.textContent = bigText;
+  tip.appendChild(b);
+  for (const l of lines) {
+    const d = document.createElement("div");
+    d.textContent = l; tip.appendChild(d);
+  }
+  tip.style.opacity = 1; tip.setAttribute("aria-hidden", "false");
+  const pad = 14, w = tip.offsetWidth, W = window.innerWidth;
+  tip.style.left = Math.min(evt.clientX + pad, W - w - 8) + "px";
+  tip.style.top = (evt.clientY + pad) + "px";
+}
+function hideTip() { tip.style.opacity = 0; tip.setAttribute("aria-hidden", "true"); }
+
+// attach hover + keyboard focus to a mark (hit target = an enlarged invisible rect)
+function addHover(svg, x, y, w, h, onShow) {
+  const hit = el("rect", { x: x - 6, y: y - 6, width: w + 12, height: h + 12,
+                           fill: "transparent", tabindex: 0 });
+  hit.addEventListener("pointermove", e => onShow(e));
+  hit.addEventListener("pointerleave", hideTip);
+  hit.addEventListener("focus", e => {
+    const r = hit.getBoundingClientRect();
+    onShow({ clientX: r.right, clientY: r.top });
+  });
+  hit.addEventListener("blur", hideTip);
+  svg.appendChild(hit);
+}
+
+function makeTable(container, headers, rows) {
+  const t = document.createElement("table");
+  const tr = document.createElement("tr");
+  headers.forEach(h => { const th = document.createElement("th"); th.textContent = h; tr.appendChild(th); });
+  t.appendChild(tr);
+  rows.forEach(r => {
+    const tr2 = document.createElement("tr");
+    r.forEach(v => { const td = document.createElement("td"); td.textContent = v; tr2.appendChild(td); });
+    t.appendChild(tr2);
+  });
+  document.getElementById(container).replaceChildren(t);
+}
+
+// ================= chart 1: mean vs median dumbbell =================
+function chartSkew() {
+  const d = DATA.systems, LBL = 168, ROW = 46, PADR = 66;
+  const W = 700, H = d.length * ROW + 16;
+  const maxV = Math.max(...d.map(s => s.mean)) * 1.12;
+  const xs = v => LBL + (v / maxV) * (W - LBL - PADR);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+    "aria-label": "Dumbbell chart comparing median and mean paid per ER visit for four categories" });
+
+  d.forEach((s, i) => {
+    const cy = i * ROW + 30;
+    // category label (text tokens, never series color)
+    const lab = el("text", { x: LBL - 10, y: cy + 4, "text-anchor": "end",
+      "font-size": 13, fill: css("--ink") });
+    lab.textContent = s.name; svg.appendChild(lab);
+    // connector + dots: gray = median, blue = mean
+    svg.appendChild(el("line", { x1: xs(s.median), y1: cy, x2: xs(s.mean), y2: cy,
+      stroke: css("--grid"), "stroke-width": 3 }));
+    svg.appendChild(el("circle", { cx: xs(s.median), cy, r: 6, fill: css("--gray-mark"),
+      stroke: css("--surface"), "stroke-width": 2 }));
+    svg.appendChild(el("circle", { cx: xs(s.mean), cy, r: 7, fill: css("--c1"),
+      stroke: css("--surface"), "stroke-width": 2 }));
+    // direct labels: value leads
+    const vm = el("text", { x: xs(s.mean) + 12, y: cy + 4, "font-size": 12.5,
+      "font-weight": 700, fill: css("--ink") });
+    vm.textContent = usd(s.mean); svg.appendChild(vm);
+    const vmed = el("text", { x: xs(s.median), y: cy - 12, "text-anchor": "middle",
+      "font-size": 11, fill: css("--muted") });
+    vmed.textContent = usd(s.median); svg.appendChild(vmed);
+
+    addHover(svg, xs(s.median) - 8, cy - 10, xs(s.mean) - xs(s.median) + 16, 20, e =>
+      showTip(e, s.name, [
+        `mean ${usd(s.mean)} · median ${usd(s.median)}`,
+        `skew: mean is ${(s.mean / s.median).toFixed(1)}x the median`,
+        `${s.nat.toFixed(1)}M national visits · n=${s.n} sampled`,
+      ]));
+  });
+  document.getElementById("chart-skew").appendChild(svg);
+  makeTable("table-skew", ["Category", "Median", "Mean", "Mean÷Median", "Visits (M)", "n"],
+    d.map(s => [s.name, usd(s.median), usd(s.mean), (s.mean/s.median).toFixed(1) + "x",
+                s.nat.toFixed(1), s.n]));
+}
+
+// ================= chart 2: drill-down bars with picker =================
+const PICK = [["inj","Injury & trauma"],["cir","Cardiac & circulatory"],["nvs","Neurological"],["dig","Digestive"]];
+function chartDrill(slug) {
+  const rows = DATA.drill[slug], LBL = 252, ROW = 34, PADR = 62;
+  const W = 700, H = rows.length * ROW + 12;
+  const maxV = Math.max(...rows.map(r => r.avg)) * 1.1;
+  const xs = v => LBL + (v / maxV) * (W - LBL - PADR);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+    "aria-label": "Bar chart of average paid per visit by specific condition" });
+
+  rows.forEach((r, i) => {
+    const y = i * ROW + 8, BH = 20;
+    const lab = el("text", { x: LBL - 10, y: y + BH/2 + 4, "text-anchor": "end",
+      "font-size": 12, fill: css("--ink") });
+    lab.textContent = r.c; svg.appendChild(lab);
+    const bar = el("rect", { x: LBL, y, width: xs(r.avg) - LBL, height: BH,
+      rx: 4, fill: css("--c1") });
+    svg.appendChild(bar);
+    const v = el("text", { x: xs(r.avg) + 8, y: y + BH/2 + 4, "font-size": 12,
+      "font-weight": 700, fill: css("--ink") });
+    v.textContent = usd(r.avg); svg.appendChild(v);
+
+    addHover(svg, LBL, y, xs(r.avg) - LBL + 46, BH, e =>
+      showTip(e, r.c, [
+        `average ${usd(r.avg)} · median ${usd(r.med)}`,
+        `≈${(r.natK/1000).toFixed(1)}M national visits · n=${r.n} sampled`,
+      ]));
+  });
+  document.getElementById("chart-drill").replaceChildren(svg);
+  makeTable("table-drill", ["Condition", "Avg paid", "Median", "Visits (k)", "n"],
+    rows.map(r => [r.c, usd(r.avg), usd(r.med), Math.round(r.natK), r.n]));
+}
+function buildPicker() {
+  const p = document.getElementById("picker");
+  PICK.forEach(([slug, label], i) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+    b.addEventListener("click", () => {
+      p.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false"));
+      b.setAttribute("aria-pressed", "true");
+      chartDrill(slug);
+    });
+    p.appendChild(b);
+  });
+}
+
+// ================= chart 3: charged vs paid grouped bars =================
+function chartMarkup() {
+  const d = DATA.systems, LBL = 168, GROUP = 62, BH = 17, GAP = 2, PADR = 96;
+  const W = 700, H = d.length * GROUP + 8;
+  const maxV = Math.max(...d.map(s => s.charged)) * 1.06;
+  const xs = v => LBL + (v / maxV) * (W - LBL - PADR);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+    "aria-label": "Grouped bars comparing billed charges with amounts actually paid" });
+
+  d.forEach((s, i) => {
+    const y0 = i * GROUP + 8;
+    const lab = el("text", { x: LBL - 10, y: y0 + BH + 3, "text-anchor": "end",
+      "font-size": 13, fill: css("--ink") });
+    lab.textContent = s.name; svg.appendChild(lab);
+    // charged (gray, top) and paid (blue, below) with a 2px surface gap
+    svg.appendChild(el("rect", { x: LBL, y: y0, width: xs(s.charged) - LBL, height: BH,
+      rx: 4, fill: css("--gray-mark") }));
+    svg.appendChild(el("rect", { x: LBL, y: y0 + BH + GAP, width: xs(s.paidSub) - LBL,
+      height: BH, rx: 4, fill: css("--c1") }));
+    const v1 = el("text", { x: xs(s.charged) + 8, y: y0 + BH - 3, "font-size": 12,
+      fill: css("--ink-2") });
+    v1.textContent = usd(s.charged); svg.appendChild(v1);
+    const v2 = el("text", { x: xs(s.paidSub) + 8, y: y0 + BH + GAP + BH - 3,
+      "font-size": 12, "font-weight": 700, fill: css("--ink") });
+    v2.textContent = usd(s.paidSub) + "  (" + s.markup.toFixed(1) + "x markup)";
+    svg.appendChild(v2);
+
+    addHover(svg, LBL, y0, W - LBL - 8, BH * 2 + GAP, e =>
+      showTip(e, s.name, [
+        `billed ${usd(s.charged)} · paid ${usd(s.paidSub)}`,
+        `hospitals charged ${s.markup.toFixed(1)}x what was paid`,
+      ]));
+  });
+  document.getElementById("chart-markup").appendChild(svg);
+  makeTable("table-markup", ["Category", "Billed", "Paid", "Markup"],
+    d.map(s => [s.name, usd(s.charged), usd(s.paidSub), s.markup.toFixed(1) + "x"]));
+}
+
+// ================= chart 4: private vs public grouped bars =================
+function chartPayer() {
+  const d = DATA.payer, LBL = 168, GROUP = 62, BH = 17, GAP = 2, PADR = 70;
+  const W = 700, H = d.length * GROUP + 8;
+  const maxV = Math.max(...d.map(s => s.priv)) * 1.1;
+  const xs = v => LBL + (v / maxV) * (W - LBL - PADR);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+    "aria-label": "Grouped bars comparing average paid per visit for private versus public insurance" });
+
+  d.forEach((s, i) => {
+    const y0 = i * GROUP + 8;
+    const lab = el("text", { x: LBL - 10, y: y0 + BH + 3, "text-anchor": "end",
+      "font-size": 13, fill: css("--ink") });
+    lab.textContent = s.name; svg.appendChild(lab);
+    svg.appendChild(el("rect", { x: LBL, y: y0, width: xs(s.priv) - LBL, height: BH,
+      rx: 4, fill: css("--c1") }));
+    svg.appendChild(el("rect", { x: LBL, y: y0 + BH + GAP, width: xs(s.pub) - LBL,
+      height: BH, rx: 4, fill: css("--c2") }));
+    const v1 = el("text", { x: xs(s.priv) + 8, y: y0 + BH - 3, "font-size": 12,
+      "font-weight": 700, fill: css("--ink") });
+    v1.textContent = usd(s.priv); svg.appendChild(v1);
+    const v2 = el("text", { x: xs(s.pub) + 8, y: y0 + BH + GAP + BH - 3,
+      "font-size": 12, fill: css("--ink-2") });
+    v2.textContent = usd(s.pub) + "  (" + (s.priv / s.pub).toFixed(1) + "x gap)";
+    svg.appendChild(v2);
+
+    addHover(svg, LBL, y0, W - LBL - 8, BH * 2 + GAP, e =>
+      showTip(e, s.name, [
+        `private ${usd(s.priv)} · public ${usd(s.pub)}`,
+        `private payments ${(s.priv / s.pub).toFixed(1)}x public`,
+      ]));
+  });
+  document.getElementById("chart-payer").appendChild(svg);
+  makeTable("table-payer", ["Category", "Private", "Public", "Gap"],
+    d.map(s => [s.name, usd(s.priv), usd(s.pub), (s.priv / s.pub).toFixed(1) + "x"]));
+}
+
+// ================= boot (re-render on color-scheme change) =================
+function renderAll() {
+  ["chart-skew", "chart-drill", "chart-markup", "chart-payer"].forEach(id =>
+    document.getElementById(id).replaceChildren());
+  chartSkew();
+  const pressed = document.querySelector('#picker button[aria-pressed="true"]');
+  const idx = pressed ? [...pressed.parentNode.children].indexOf(pressed) : 0;
+  chartDrill(PICK[idx][0]);
+  chartMarkup(); chartPayer();
+}
+buildPicker();
+renderAll();
+
+</script>
+</body>
+</html>
