@@ -9,7 +9,7 @@
   :root {
     --page: #b6a593;              /* the site's taupe background */
     --surface: #f4ede3;           /* cream cards, like paper on the taupe */
-    --ink: #342f2a; --ink-2: #5c5548; --muted: #857b6c;
+    --ink: #342f2a; --ink-2: #3e382f; --muted: #6b6255;
     --grid: #e3d9ca; --baseline: #c9bda9; --ring: rgba(52,47,42,.14);
     --c1: #a8502f;                /* terracotta — primary data color */
     --c2: #0d8065;                /* teal — secondary data color */
@@ -27,11 +27,11 @@
   h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.12; letter-spacing: -.01em; }
   .kicker { color: var(--accent-text); font-weight: 700; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
   .dek { color: var(--ink-2); font-size: 1.1rem; margin-top: 14px; }
-  .byline { color: var(--muted); font-size: .85rem; margin-top: 18px; padding-bottom: 26px; border-bottom: 1px solid var(--grid); }
+  .byline { color: var(--ink-2); font-size: .85rem; margin-top: 18px; padding-bottom: 26px; border-bottom: 1px solid var(--grid); }
   h2 { font-family: var(--serif); font-weight: 600; font-size: 1.45rem; letter-spacing: -.01em; margin: 44px 0 10px; }
   p { margin: 12px 0; color: var(--ink-2); }
   p strong, li strong { color: var(--ink); }
-  .note { font-size: .82rem; color: var(--muted); margin-top: 8px; }
+  .note { font-size: .82rem; color: var(--ink-2); margin-top: 8px; }
 
   /* ---- stat tiles ---- */
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 28px 0 8px; }
@@ -76,7 +76,7 @@
   th:first-child, td:first-child { text-align: left; }
   th { color: var(--muted); font-weight: 600; }
 
-  .foot { border-top: 1px solid var(--grid); margin-top: 48px; padding-top: 18px; font-size: .82rem; color: var(--muted); }
+  .foot { border-top: 1px solid var(--grid); margin-top: 48px; padding-top: 18px; font-size: .82rem; color: var(--ink-2); }
   a { color: var(--accent-text); }
 </style>
 </head>
