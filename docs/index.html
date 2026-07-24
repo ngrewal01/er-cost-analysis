@@ -85,18 +85,18 @@
 
   <div class="kicker">Healthcare data analysis</div>
   <h1>What does an ER visit really cost?</h1>
-  <p class="dek">The average emergency room bill in 2023 said $5,675. What actually
-  changed hands was $1,435. I dug into federal survey data to find out what ER care
-  really costs — and how much the answer depends on why you're there and who's paying.</p>
+  <p class="dek">The average emergency room bill in 2023 was $5,675. What actually
+  got paid out was $1,435. I looked into federal survey data to find out what ER care
+  really costs, and how much the answer depends on why you're there and who's paying.</p>
   <p class="byline">By Navraj Grewal · MEPS 2023 microdata (AHRQ) · Analysis in Python —
   <a href="https://github.com/ngrewal01/er-cost-analysis">full notebook on GitHub</a></p>
 
   <p>Every year, Americans make tens of millions of trips to the emergency room, and
-  almost nobody can say what one costs. Hospital "chargemaster" prices are fiction;
+  almost nobody can say what one costs. Hospital "chargemaster" prices are fiction, and
   what insurers negotiate is opaque. So I went to the closest thing the U.S. has to
   ground truth: the <strong>Medical Expenditure Panel Survey (MEPS)</strong>, a
   federal survey that records what was <em>actually paid</em> for each medical
-  visit — by insurers and patients combined, not what was billed.</p>
+  visit by insurers and patients combined.</p>
 
   <div class="tiles">
     <div class="tile"><div class="v">68M</div><div class="l">estimated U.S. ER visits, 2023</div></div>
@@ -112,7 +112,7 @@
   &amp; trauma</strong>, <strong>cardiac &amp; circulatory events</strong>,
   <strong>neurological events</strong>, and <strong>digestive problems</strong>.
   Together they account for roughly 28&nbsp;million visits a year.</p>
-  <p>The first surprise: the <em>average</em> and the <em>typical</em> visit are wildly
+  <p>The first finding: the <em>average</em> and the <em>typical</em> visit are wildly
   different numbers. The mean is dragged upward by a minority of catastrophic cases,
   and how far it's dragged varies by category:</p>
 
@@ -128,8 +128,8 @@
   </div>
 
   <p><strong>Cardiac visits have the most extreme skew:</strong> the typical circulatory
-  visit costs about $505 — many are chest-pain scares that end with tests and a
-  discharge — but the average is 3.4&times; higher, pulled up by the visits that turn
+  visit costs about $505 (many are chest-pain scares that end with tests and a
+  discharge) but the average is 3.4&times; higher, pulled up by the visits that turn
   out to be the real thing. Digestive visits show the same pattern at higher cost:
   a long tail of GI bleeds and obstructions makes them the most expensive of the four
   on average ($2,398), despite a modest typical cost. Injuries are the most
@@ -147,7 +147,7 @@
     <details><summary>View data as table</summary><div id="table-drill"></div></details>
   </div>
 
-  <p>One number here looks bizarre — and it's the most instructive in the whole
+  <p>One number here looks bizarre, and it's the most instructive in the whole
   dataset. <strong>A heart attack averages just $696 in the ER, less than half of
   a hypertension visit.</strong> That's not because heart attacks are cheap. It's
   because heart attack patients get <em>admitted</em>: the meter stops on the ER
